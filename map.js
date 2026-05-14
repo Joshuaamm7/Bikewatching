@@ -23,6 +23,8 @@ const map = new mapboxgl.Map({
 // Select the SVG layer inside the map
 const svg = d3.select('#map').select('svg');
 
+const tooltip = d3.select('#map').append('div').attr('class', 'tooltip');
+
 // Bluebikes station data URL
 const BLUEBIKES_STATIONS_URL =
   'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
@@ -130,12 +132,18 @@ const radiusScale = d3
   .attr('stroke', 'white')
   .attr('stroke-width', 1)
   .attr('opacity', 0.8)
-  .each(function (d) {
-    d3.select(this)
-      .append('title')
+  .on('mouseenter', function (event, d) {
+    const [x, y] = d3.pointer(event, svg.node());
+    tooltip
+      .style('display', 'block')
+      .style('left', `${x + 12}px`)
+      .style('top', `${y - 28}px`)
       .text(
         `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`,
       );
+  })
+  .on('mouseleave', function () {
+    tooltip.style('display', 'none');
   });
 
   // Function to update circle positions when the map moves/zooms

@@ -26,11 +26,20 @@ h1 {
   height: 100%;
   pointer-events: none;
 }
+#map svg circle,
+.legend > div {
+  --color-departures: steelblue;
+  --color-arrivals: darkorange;
+  --color: color-mix(
+    in oklch,
+    var(--color-departures) calc(100% * var(--departure-ratio)),
+    var(--color-arrivals)
+  );
+}
+
 #map svg circle {
-  fill: steelblue;
+  fill: var(--color);
   fill-opacity: 0.6;
-  stroke: white;
-  stroke-width: 1;
   pointer-events: auto;
 }
 
@@ -69,4 +78,30 @@ header label {
 #any-time {
   color: gray;
   font-style: italic;
+}
+.legend {
+  display: flex;
+  gap: 1px;
+  margin-block: 1rem;
+  padding-inline: 1rem;
+}
+
+.legend > div {
+  flex: 1;
+  background: var(--color);
+  padding: 0.5rem 1rem;
+  color: white;
+  font-weight: 600;
+}
+
+.legend > div:nth-child(1) {
+  text-align: left;
+}
+
+.legend > div:nth-child(2) {
+  text-align: center;
+}
+
+.legend > div:nth-child(3) {
+  text-align: right;
 }

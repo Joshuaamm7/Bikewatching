@@ -161,7 +161,9 @@ const radiusScale = d3
   .enter()
   .append('circle')
   .attr('r', (d) => radiusScale(d.totalTraffic))
-  .attr('fill', 'steelblue')
+  .style('--departure-ratio', (d) =>
+    stationFlow(d.totalTraffic === 0 ? 0.5 : d.departures / d.totalTraffic),
+  )
   .attr('stroke', 'white')
   .attr('stroke-width', 1)
   .attr('opacity', 0.8)
@@ -208,9 +210,12 @@ const radiusScale = d3
       : radiusScale.range([3, 50]);
 
     circles
-      .data(filteredStations, (d) => d.short_name)
-      .join('circle')
-      .attr('r', (d) => radiusScale(d.totalTraffic));
+    .data(filteredStations, (d) => d.short_name)
+    .join('circle')
+    .attr('r', (d) => radiusScale(d.totalTraffic))
+    .style('--departure-ratio', (d) =>
+        stationFlow(d.totalTraffic === 0 ? 0.5 : d.departures / d.totalTraffic),
+    );
   }
 
   function updateTimeDisplay() {
@@ -230,3 +235,8 @@ const radiusScale = d3
   timeSlider.addEventListener('input', updateTimeDisplay);
   updateTimeDisplay();
 });
+
+const stationFlow = d3
+  .scaleQuantize()
+  .domain([0, 1])
+  .range([0, 0.5, 1]);

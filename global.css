@@ -46,3 +46,27 @@ h1 {
   white-space: nowrap;
   display: none;
 }
+header {
+  display: flex;
+  gap: 1em;
+  align-items: baseline;
+  padding: 1rem;
+}
+
+header h1 {
+  margin: 0;
+}
+
+header label {
+  margin-left: auto;
+}
+
+#selected-time,
+#any-time {
+  display: block;
+}
+
+#any-time {
+  color: gray;
+  font-style: italic;
+}

@@ -1,12 +1,14 @@
 // Import Mapbox as an ESM module
 import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
 
+// Import D3
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
+
 // Check that Mapbox GL JS is loaded
 console.log('Mapbox GL JS Loaded:', mapboxgl);
 
 // Set your Mapbox access token here
 mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zaGh1YTkyMTIiLCJhIjoiY21wNXN2eDg1MTN6bTJzb2F0dnU4YjN1bCJ9.PKXv56Mv3XBHfKk4ueB7hQ';
-// mapboxgl.accessToken = 'YOUR_MAPBOX_PUBLIC_TOKEN_HERE';
 
 // Initialize the map
 const map = new mapboxgl.Map({
@@ -18,6 +20,13 @@ const map = new mapboxgl.Map({
   maxZoom: 18,
 });
 
+// Select the SVG layer inside the map
+const svg = d3.select('#map').select('svg');
+
+// Bluebikes station data URL
+const BLUEBIKES_STATIONS_URL =
+  'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
+
 // Shared bike lane style
 const bikeLaneStyle = {
   'line-color': '#32D400',
@@ -25,8 +34,15 @@ const bikeLaneStyle = {
   'line-opacity': 0.6,
 };
 
+// Helper function to convert station longitude/latitude into screen coordinates
+function getCoords(station) {
+  const point = new mapboxgl.LngLat(+station.Long, +station.Lat);
+  const { x, y } = map.project(point);
+  return { cx: x, cy: y };
+}
+
 // Wait for the map to load before adding data
-map.on('load', () => {
+map.on('load', async () => {
   // Boston bike lanes source
   map.addSource('boston_route', {
     type: 'geojson',
@@ -54,4 +70,47 @@ map.on('load', () => {
     source: 'cambridge_route',
     paint: bikeLaneStyle,
   });
+
+  let stations;
+
+  try {
+    const jsonData = await d3.json(BLUEBIKES_STATIONS_URL);
+
+    console.log('Loaded JSON Data:', jsonData);
+
+    stations = jsonData.data.stations;
+
+    console.log('Stations Array:', stations);
+  } catch (error) {
+    console.error('Error loading JSON:', error);
+    return;
+  }
+
+  // Append circles to the SVG for each station
+  const circles = svg
+    .selectAll('circle')
+    .data(stations)
+    .enter()
+    .append('circle')
+    .attr('r', 5)
+    .attr('fill', 'steelblue')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('opacity', 0.8);
+
+  // Function to update circle positions when the map moves/zooms
+  function updatePositions() {
+    circles
+      .attr('cx', (d) => getCoords(d).cx)
+      .attr('cy', (d) => getCoords(d).cy);
+  }
+
+  // Initial position update
+  updatePositions();
+
+  // Reposition markers on map interactions
+  map.on('move', updatePositions);
+  map.on('zoom', updatePositions);
+  map.on('resize', updatePositions);
+  map.on('moveend', updatePositions);
 });

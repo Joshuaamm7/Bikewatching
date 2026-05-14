@@ -194,38 +194,39 @@ const radiusScale = d3
   map.on('zoom', updatePositions);
   map.on('resize', updatePositions);
   map.on('moveend', updatePositions);
-});
-const timeSlider = document.getElementById('time-slider');
-const selectedTime = document.getElementById('selected-time');
-const anyTimeLabel = document.getElementById('any-time');
 
-function updateScatterPlot(timeFilter) {
-  const filteredTrips = filterTripsByTime(trips, timeFilter);
-  const filteredStations = computeStationTraffic(stations, filteredTrips);
+  const timeSlider = document.getElementById('time-slider');
+  const selectedTime = document.getElementById('selected-time');
+  const anyTimeLabel = document.getElementById('any-time');
 
-  timeFilter === -1
-    ? radiusScale.range([0, 25])
-    : radiusScale.range([3, 50]);
+  function updateScatterPlot(timeFilter) {
+    const filteredTrips = filterTripsByTime(trips, timeFilter);
+    const filteredStations = computeStationTraffic(stations, filteredTrips);
 
-  circles
-    .data(filteredStations, (d) => d.short_name)
-    .join('circle')
-    .attr('r', (d) => radiusScale(d.totalTraffic));
-}
+    timeFilter === -1
+      ? radiusScale.range([0, 25])
+      : radiusScale.range([3, 50]);
 
-function updateTimeDisplay() {
-  const timeFilter = Number(timeSlider.value);
-
-  if (timeFilter === -1) {
-    selectedTime.textContent = '';
-    anyTimeLabel.style.display = 'block';
-  } else {
-    selectedTime.textContent = formatTime(timeFilter);
-    anyTimeLabel.style.display = 'none';
+    circles
+      .data(filteredStations, (d) => d.short_name)
+      .join('circle')
+      .attr('r', (d) => radiusScale(d.totalTraffic));
   }
 
-  updateScatterPlot(timeFilter);
-}
+  function updateTimeDisplay() {
+    const timeFilter = Number(timeSlider.value);
 
-timeSlider.addEventListener('input', updateTimeDisplay);
-updateTimeDisplay();
+    if (timeFilter === -1) {
+      selectedTime.textContent = '';
+      anyTimeLabel.style.display = 'block';
+    } else {
+      selectedTime.textContent = formatTime(timeFilter);
+      anyTimeLabel.style.display = 'none';
+    }
+
+    updateScatterPlot(timeFilter);
+  }
+
+  timeSlider.addEventListener('input', updateTimeDisplay);
+  updateTimeDisplay();
+});

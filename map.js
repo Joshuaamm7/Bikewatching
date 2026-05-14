@@ -26,6 +26,8 @@ const svg = d3.select('#map').select('svg');
 // Bluebikes station data URL
 const BLUEBIKES_STATIONS_URL =
   'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
+const BLUEBIKES_TRAFFIC_URL =
+  'https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv';
 
 // Shared bike lane style
 const bikeLaneStyle = {
@@ -72,31 +74,69 @@ map.on('load', async () => {
   });
 
   let stations;
+  let trips;
 
   try {
     const jsonData = await d3.json(BLUEBIKES_STATIONS_URL);
+    trips = await d3.csv(BLUEBIKES_TRAFFIC_URL);
 
     console.log('Loaded JSON Data:', jsonData);
+    console.log('Loaded Trips Data:', trips);
 
     stations = jsonData.data.stations;
 
     console.log('Stations Array:', stations);
-  } catch (error) {
-    console.error('Error loading JSON:', error);
+    } catch (error) {
+    console.error('Error loading data:', error);
     return;
-  }
+    }
+
+const departures = d3.rollup(
+  trips,
+  (v) => v.length,
+  (d) => d.start_station_id,
+);
+
+const arrivals = d3.rollup(
+  trips,
+  (v) => v.length,
+  (d) => d.end_station_id,
+);
+
+stations = stations.map((station) => {
+  const id = station.short_name;
+
+  station.arrivals = arrivals.get(id) ?? 0;
+  station.departures = departures.get(id) ?? 0;
+  station.totalTraffic = station.arrivals + station.departures;
+
+  return station;
+});
+
+console.log('Stations with traffic:', stations);
+const radiusScale = d3
+  .scaleSqrt()
+  .domain([0, d3.max(stations, (d) => d.totalTraffic)])
+  .range([0, 25]);
 
   // Append circles to the SVG for each station
-  const circles = svg
-    .selectAll('circle')
-    .data(stations)
-    .enter()
-    .append('circle')
-    .attr('r', 5)
-    .attr('fill', 'steelblue')
-    .attr('stroke', 'white')
-    .attr('stroke-width', 1)
-    .attr('opacity', 0.8);
+ const circles = svg
+  .selectAll('circle')
+  .data(stations)
+  .enter()
+  .append('circle')
+  .attr('r', (d) => radiusScale(d.totalTraffic))
+  .attr('fill', 'steelblue')
+  .attr('stroke', 'white')
+  .attr('stroke-width', 1)
+  .attr('opacity', 0.8)
+  .each(function (d) {
+    d3.select(this)
+      .append('title')
+      .text(
+        `${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`,
+      );
+  });
 
   // Function to update circle positions when the map moves/zooms
   function updatePositions() {
